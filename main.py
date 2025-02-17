@@ -1,31 +1,28 @@
 
 
+from XJ_Saver.XJ_Saver_Git import XJ_Saver_Git
 from XJ_Saver.XJ_Git import XJ_Git
-from XJ_Saver.XJ_GitRecord import XJ_GitRecord
-from XJ.Widgets.XJQ_VisibleTree import XJQ_VisibleTree
-
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 
-path='./Repository'
-# path='./x'
 
 if True:
-	# gm=XJ_GitManager([])
-	# gm.Opt_LoadFromLocal(path)
-	# print(gm.tree)
+	path='./Repository'
+
+	# rst=XJ_Git.Get_Merges(path)
+	# rst=XJ_Git.Get_RecentCommits(-1,path)
+	# print(rst.nameLst)
 	# exit()
 
+
+
 	app=QApplication([])
-	vt=XJQ_VisibleTree()
-	gr=XJ_GitRecord(vt.Get_Tree())
-	gr.Opt_LoadFromLocal(path)
-	vt.Opt_Update()
+
+	sv=XJ_Saver_Git()
+	# sv.Set_Path(path)
 
 	app.exec()
-exit()
-
 
 
 

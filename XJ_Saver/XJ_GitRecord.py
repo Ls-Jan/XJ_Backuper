@@ -21,7 +21,7 @@ class XJ_GitRecord:
 	def Opt_LoadFromLocal(self,path:str):
 		'''
 			加载git信息。
-			如果路径无效则返回False并不做任何动作。
+			如果路径无效则返回False并且不做任何动作。
 		'''
 		if(not XJ_Git.Test_RepositoryExist(path).flag):
 			return False
@@ -47,8 +47,8 @@ class XJ_GitRecord:
 		if True:#更新tree、commits、commitIndex、branchIndex、self.headIndex
 			commitIndex.clear()
 			commits.clear()
-			tree.clear()
-			tree.append([-1])
+			del tree[1:]
+			del tree[0][1:]
 			for branch in branchCommits:
 				n:list=tree[0]
 				for id in reversed(branchCommits[branch]):#由旧到新

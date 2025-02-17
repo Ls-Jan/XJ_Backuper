@@ -18,9 +18,11 @@ class XJ_Saver_Base:
 		self._path='.'
 	def Set_Path(self,path:str):
 		'''
-			切换路径
+			切换路径。
+			设置成功将返回True
 		'''
 		self._path=path
+		return True
 	def Get_DifferentWith(self,targetID:int,sourceID:int=None):
 		'''
 			source与target进行比较，获取文件变化信息。
