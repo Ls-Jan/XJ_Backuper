@@ -114,7 +114,7 @@ class XJ_GitRecord:
 		'''
 			同步新增分支动作
 		'''	
-		for name in XJ_Git.Get_BranchNames().nameLst:
+		for name in XJ_Git.Get_BranchNames(self.path).nameLst:
 			if(name not in self.branchCommits):
 				self.branchCommits[name]=[self.commitIndex[c] for c in XJ_Git.Get_BranchCommits(name,path=self.path).commits]
 				self.branchIndex[name]=self.branchCommits[name][0]
@@ -123,7 +123,7 @@ class XJ_GitRecord:
 		'''
 			同步恢复操作（切换HEAD)
 		'''
-		rst=XJ_Git.Get_BranchNames()
+		rst=XJ_Git.Get_BranchNames(self.path)
 		self.headIndex=self.commitIndex[rst.headName] if rst.headIsDetached else self.branchIndex[rst.headName]
 		self.isDetached=rst.headIsDetached
 		return True

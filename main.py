@@ -8,8 +8,6 @@ from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 
 
-import subprocess
-
 
 # if True:
 # 	app=QApplication([])
@@ -39,7 +37,7 @@ import subprocess
 if True:
 	path=''
 	path='.'
-	# path='./Repository'
+	path='./Repository'
 
 	# rst=XJ_Git.Get_RecentCommits(-1,path).commits
 	# for i in range(len(rst)):

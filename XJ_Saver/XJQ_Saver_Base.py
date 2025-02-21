@@ -35,7 +35,6 @@ class XJQ_Saver_Base(QWidget):
 		btnRecover.clicked.connect(self.__Btn_Recover)
 
 		self._vtree=vtree
-		self._path='.'
 		self.__nodeID=0
 		self.__mskOption=mskOption
 		self.__btnBackup=btnBackup
@@ -45,7 +44,6 @@ class XJQ_Saver_Base(QWidget):
 			切换路径。
 			设置成功将返回True
 		'''
-		self._path=path
 		return True
 	def Get_DifferentWith(self,targetID:int,sourceID:int=None):
 		'''
