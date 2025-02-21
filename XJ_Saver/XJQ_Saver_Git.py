@@ -1,6 +1,6 @@
 
 
-from .XJ_Saver_Base import XJ_Saver_Base
+from .XJQ_Saver_Base import XJQ_Saver_Base
 # from .XJQ_Thread import XJQ_Thread
 from .XJ_Git import XJ_Git
 from .XJ_GitRecord import XJ_GitRecord
@@ -14,44 +14,83 @@ from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 from XJ.Widgets.XJQ_Mask import XJQ_Mask
 from threading import Thread
-
+from time import sleep
+import os
 
 class GitOperator:
 	'''
 		将git相关的各种耗时操作移至此处完成(开辟一条线程单独执行任务)
 	'''
 	__th:Thread
-	__msk:XJQ_Mask
+	__mskBusy:XJQ_Mask
 	__vtree:XJQ_VisibleTree
 	__gr:XJ_GitRecord
 	__dlg_pathChange:QMessageBox
 	__dlg_textInput:XJQ_TextInputDialog
 	__loop:QEventLoop
-	def __init__(self,vtree:XJQ_VisibleTree,gr:XJ_GitRecord):
+	__optSuccess:bool
+	def __init__(self,parent:QWidget,vtree:XJQ_VisibleTree,gr:XJ_GitRecord):
 		self.__th=Thread()
-		self.__msk=XJQ_Mask(vtree.Get_Canvas())
+		self.__mskBusy=XJQ_Mask(parent,QColor(0,0,0,128))
 
 		self.__vtree=vtree
 		self.__gr=gr
 		self.__dlg_pathChange=QMessageBox(QMessageBox.Icon.Question,"切换路径","是否切换仓库路径？")
-		self.__dlg_textInput=XJQ_TextInputDialog(parent=vtree.Get_Canvas())
+		self.__dlg_textInput=XJQ_TextInputDialog(parent=parent)
 		self.__loop=QEventLoop()
 		
 		dlg=self.__dlg_pathChange
 		dlg.addButton("取消",QMessageBox.ButtonRole.NoRole)
 		dlg.addButton("确认",QMessageBox.ButtonRole.YesRole)
 
-		msk=self.__msk
+		msk=self.__mskBusy
 		la=XJQ_LoadingAnimation()
+		la.Set_Text(textFunc=lambda arg:'处理中'+'.'*arg)
 		msk.Set_CenterWidget(la)
+		msk.hide()
 	def Opt_SetPath(self,path:str):
 		'''
 			设置仓库路径。
 			如果path为空则运行时会打开文件选择窗口
 		'''
-		if(not self.Get_IsRunning()):
-			self.__th=Thread(target=self.__Th_Run,args=(self.__Load,path))
+		if(self.Get_IsRunning()):
+			return
+		if(path==None):
+			if(self.__dlg_pathChange.exec()):
+				path=QFileDialog.getExistingDirectory()
+		if(path):
+			gr=self.__gr
+			self.__mskBusy.show()
+			self.__th=Thread(target=self.__Th_Run,args=(gr.Opt_LoadFromLocal,path))
 			self.__th.start()
+			self.__loop.exec()
+			if(self.__optSuccess):
+				vtree=self.__vtree
+				vtree.Opt_Update()
+				btn=vtree.Get_Node(0)
+				btn.setText(os.path.split(os.path.abspath(path))[-1])
+				for i in range(len(vtree.Get_Tree())):
+					btn=vtree.Get_Node(i)
+					btn.setText(f'{i}')
+				for merge in gr.merges:
+					btn=vtree.Get_Node(merge)
+					btn.setText(f'>{merge}')
+					# for p in parents[1:]:
+					# 	btn=vtree.Get_Node(p)
+					# 	btn.setText(f'{merge}>')
+				for lid,rid in gr.coincident.items():
+					btn=vtree.Get_Node(lid)
+					btn.setText(f'*{rid}')
+					# btn.setText(f'*{btn.text()}')
+				for branch,id in gr.branchIndex.items():
+					btn=vtree.Get_Node(id)
+					vtree.Get_Tree().Set_NodeSize(id,200,50)
+					btn.setText(f'{btn.text()}\n{branch}')
+					# print(id,btn.text())
+				vtree.Opt_Update()
+			else:
+				QMessageBox.about(self.__vtree.Get_Canvas(),"失败","无效的git路径")
+			self.__mskBusy.hide()
 	def Opt_AddCommit(self,commit:str):
 		'''
 			添加提交。
@@ -84,27 +123,19 @@ class GitOperator:
 			self.__th.start()
 	def Get_IsRunning(self):
 		return self.__th.is_alive()
-	def __Load(self,path:str):
+
+	def __Th_Run(self,func:Callable,*args):
 		'''
-			加载git信息。
-			如果path为空则弹出路径选择框
+			将耗时操作传入单独线程中完成。
 		'''
-		print("!!!",path)
-		gr=self.__gr
-		if(path==None):
-			print("A")
-			if(self.__dlg_pathChange.exec()):
-				print("B")
-				path=QFileDialog.getExistingDirectory()
-			print("C")
-		return
-		if(path):
-			if(gr.Opt_LoadFromLocal(path)):
-				self.__vtree.Opt_Update()
-				btn=self.__vtree.Get_Node(0)
-				btn.setText(path)
-			else:
-				QMessageBox.about(None,"失败","无效的git路径")
+		sleep(0.1)
+		self.__optSuccess=func(*args)
+		self.__loop.quit()
+	# def __Clicked(self):
+
+
+
+	#废弃
 	def __AddCommit(self,info:str=None):
 		'''
 			添加提交。
@@ -140,36 +171,27 @@ class GitOperator:
 		if(commit):
 			XJ_Git.Opt_Recover(commit,True,self.__gr.path)
 			self.__gr.Opt_Checkout()
-	def __Th_Run(self,func:Callable,*args):
-		'''
-			给线程使用
-		'''
-		self.__msk.show()
-		self.__msk.setGeometry(-1000,-1000,1500,1500)
-		func(*args)
-		self.__msk.hide()
 
 
 
-class XJ_Saver_Git(XJ_Saver_Base):
+class XJQ_Saver_Git(XJQ_Saver_Base):
 	'''
 		基于Git的数据存储恢复器
 	'''
 	def __init__(self):
 		super().__init__()
 		self.__gr=XJ_GitRecord(self._vtree.Get_Tree())
-		btn=self._vtree.Get_Node(0)
+		self.__go=GitOperator(self,self._vtree,self.__gr)
+		self._vtree.Get_Node(0).setText('选择路径')
+		# self._vtree.Get_Tree().Set_NodeSize(-1,100,50)
 		self._vtree.Get_Tree().Set_NodeSize(0,400,50)
-		btn.setText('选择路径')
-		self.__go=GitOperator(self._vtree,self.__gr)
-
-		btn.clicked.connect(lambda:self.Set_Path())
-		# btn.clicked.connect(self.Dlg_SelectPath)
+		self._vtree.Get_ClickedSignal().connect(lambda index:self.Set_Path() if index==0 else print("AAA"))
 		self.Opt_Update()
+	# def _
 	def Get_DifferentWith(self,targetID:int,sourceID:int=None):
 		cmd='git status -s'
 	def Opt_CreateBackup(self,info:str):
-		cmd='git commit'
+		rst=XJ_Git.Opt_AddCommit(info,self._path)
 	def Set_Path(self,path:str=None):
 		'''
 			设置路径。
@@ -178,8 +200,10 @@ class XJ_Saver_Git(XJ_Saver_Base):
 		self.__go.Opt_SetPath(path)
 		# self.__go.Opt_Run()
 	def Opt_Recover(self,id:int):
-		if(0<=id<len(self.__gr.commits)):
-			XJ_Git.Opt_Recover(self.__gr.commits[id],True,self._path)
+		return
+		if(0<=id<len(self.__gr.commitID)):
+			rst=XJ_Git.Opt_Recover(self.__gr.commitID[id],True,self._path)
+			print(rst.info)
 			self.__gr.Opt_Checkout()
 			self.Opt_Update()
 	def Opt_Update(self):

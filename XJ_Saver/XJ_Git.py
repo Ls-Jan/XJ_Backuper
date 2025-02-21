@@ -68,7 +68,8 @@ class XJ_Git:
 				count指定数量，
 				count<0时将获取所有提交。
 			'''
-			cmd_s=f'git log --oneline -n {count}'
+			cmd_s=f'git log --simplify-merges --oneline --all -n {count}'
+			# cmd_s=f'git log --oneline --all -n {count}'
 			lst=RunCMD(cmd_s,path,lambda row:row[:row.find(' ')])
 			self.success='cannot find the path' not in lst[0]
 			self.commits=lst if self.success else []
