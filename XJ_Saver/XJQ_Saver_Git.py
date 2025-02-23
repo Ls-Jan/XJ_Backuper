@@ -11,7 +11,7 @@ from XJ.Widgets.XJQ_LoadingAnimation import XJQ_LoadingAnimation
 from XJ.Widgets.XJQ_TextInputDialog import XJQ_TextInputDialog
 from XJ.Widgets.XJQ_Mask import XJQ_Mask
 
-from PyQt5.QtWidgets import QMessageBox
+from PyQt5.QtWidgets import QMessageBox,QFileDialog
 from PyQt5.QtGui import QColor
 from PyQt5.QtCore import QEventLoop
 from typing import Callable
@@ -30,7 +30,7 @@ class XJQ_Saver_Git(XJQ_Saver_Base):
 	__dlg_textInput:XJQ_TextInputDialog
 	__loop:QEventLoop
 	__optSuccess:bool
-	def __init__(self,vtree:XJQ_VisibleTree):
+	def __init__(self,vtree:XJQ_VisibleTree=None):
 		super().__init__(vtree)
 		self.__th=Thread()
 		self.__mskBusy=XJQ_Mask(self,QColor(0,0,0,128))
@@ -53,34 +53,22 @@ class XJQ_Saver_Git(XJQ_Saver_Base):
 		msk.hide()
 
 		self.__gr=XJ_GitRecord(self._vtree.Get_Tree())
-		# self.__go=XJQ_GitOperator(self,self._vtree,self.__gr)
 		self._vtree.Get_Node(0).setText('选择路径')
 		# self._vtree.Get_Tree().Set_NodeSize(-1,100,50)
 		self._vtree.Get_Tree().Set_NodeSize(0,400,50)
-		self._vtree.Get_ClickedSignal().connect(lambda index:self.Set_Path() if index==0 else None)
+		self._vtree.Get_ClickedSignal().connect(lambda index:self.Set_Path(None) if index==0 else None)
 		self.Opt_Update()
 	def Get_DifferentWith(self,targetID:int,sourceID:int=None):
 		cmd='git status -s'
+	def Get_IsBusy(self):
+		return self.__th.is_alive()
 	def Opt_CreateBackup(self,info:str):
-		return self.Opt_AddCommit(info)
-	def Opt_SetPath(self,path:str):
-		'''
-			设置仓库路径。
-			如果path为None则打开对话框进行选择
-		'''
-		if(self.Get_IsRunning()):
-			self.__dlg_busy.exec()
-		else:
-			if(path==None):
-				if(self.__dlg_pathChange.exec()):
-					path=QFileDialog.getExistingDirectory()
-			if(path):
-				self.__dlg_fail.setText('无效的git路径')
-				return self.__RunFunc(self.__LoadPath,path)
-		return False
+		return self.Git_AddCommit(info)
+	def Set_Path(self, path):
+		return self.Git_SetPath(path)
 	def Opt_Recover(self,id:int):
 		if(0<=id<len(self.__gr.commitID)):
-			return self.Opt_Checkout(self.__gr.commitID[id])
+			return self.Git_Checkout(self.__gr.commitID[id])
 		return False
 	def Opt_Update(self):
 		super().Opt_Update()
@@ -108,12 +96,29 @@ class XJQ_Saver_Git(XJQ_Saver_Base):
 			btn=vtree.Get_Node(gr.headIndex)
 			btn.setText(f"H*{btn.text()}")
 		vtree.Opt_Update()#这一步是为了更新布局
-	def Opt_AddCommit(self,info:str):
+
+	def Git_SetPath(self,path:str):
+		'''
+			设置仓库路径。
+			如果path为None则打开对话框进行选择
+		'''
+		print(path)
+		if(self.Get_IsBusy()):
+			self.__dlg_busy.exec()
+		else:
+			if(path==None):
+				if(self.__dlg_pathChange.exec()):
+					path=QFileDialog.getExistingDirectory()
+			if(path):
+				self.__dlg_fail.setText('无效的git路径')
+				return self.__RunFunc(self.__LoadPath,path)
+		return False
+	def Git_AddCommit(self,info:str):
 		'''
 			添加提交。
 			如果info为空则弹出文本输入框
 		'''
-		if(self.Get_IsRunning()):
+		if(self.Get_IsBusy()):
 			self.__dlg_busy.exec()
 		else:
 			if(not info):
@@ -123,12 +128,12 @@ class XJQ_Saver_Git(XJQ_Saver_Base):
 			self.__dlg_fail.setText('无法提交更改')
 			return self.__RunFunc(self.__AddCommit,info)
 		return False
-	def Opt_AddBranch(self,branch:str):
+	def Git_AddBranch(self,branch:str):
 		'''
 			添加分支。
 			如果branch为空则弹出文本输入框
 		'''
-		if(self.Get_IsRunning()):
+		if(self.Get_IsBusy()):
 			self.__dlg_busy.exec()
 		else:
 			if(not branch):
@@ -140,16 +145,16 @@ class XJQ_Saver_Git(XJQ_Saver_Base):
 			self.__dlg_fail.setText('当前分支已存在')
 			return self.__RunFunc(self.__AddBranch,branch)
 		return False
-	def Opt_SwitchBranch(self,branch:str):
+	def Git_SwitchBranch(self,branch:str):
 		'''
 			切换HEAD指向的分支。
 			仅限和HEAD处在同一提交下的分支。
 		'''
-	def Opt_Merge(self,*commits:str):
+	def Git_Merge(self,*commits:str):
 		'''
 			合并提交。
 		'''
-		if(self.Get_IsRunning()):
+		if(self.Get_IsBusy()):
 			self.__dlg_busy.exec()
 		else:
 			if(len(commits)<2):
@@ -159,18 +164,16 @@ class XJQ_Saver_Git(XJQ_Saver_Base):
 				self.__dlg_fail.setText('分支合并失败')
 				return self.__RunFunc(self.__Merge,*commits)
 		return False
-	def Opt_Checkout(self,commit:str):
+	def Git_Checkout(self,commit:str):
 		'''
 			恢复备份
 		'''
-		if(self.Get_IsRunning()):
+		if(self.Get_IsBusy()):
 			self.__dlg_busy.exec()
 		else:
 			self.__dlg_fail.setText('备份恢复失败')
 			return self.__RunFunc(self.__Checkout,commit)
 		return False
-	def Get_IsRunning(self):
-		return self.__th.is_alive()
 	def __RunFunc(self,func:Callable,*args):
 		'''
 			运行函数
@@ -184,7 +187,7 @@ class XJQ_Saver_Git(XJQ_Saver_Base):
 			self.__optSuccess=func(*args)
 			self.__loop.quit()
 		mskVisible=self.__mskBusy.isVisible()
-		if(not self.Get_IsRunning()):
+		if(not self.Get_IsBusy()):
 			self.__mskBusy.show()
 			self.__th=Thread(target=ThRun,args=(func,*args))
 			self.__th.start()
@@ -241,56 +244,6 @@ class XJQ_Saver_Git(XJQ_Saver_Base):
 
 
 
-
-
-
-
-
-
-# __version__='1.0.0'
-# __author__='Ls_Jan'
-# __all__=['XJQ_Saver_Git']
-
-# from .XJQ_Saver_Base import XJQ_Saver_Base
-# from .XJ_GitRecord import XJ_GitRecord
-# from .XJQ_GitOperator import XJQ_GitOperator
-
-# from PyQt5.QtWidgets import *
-# from PyQt5.QtGui import *
-# from PyQt5.QtCore import *
-
-# class XJQ_Saver_Git(XJQ_Saver_Base):
-# 	'''
-# 		基于Git的数据存储恢复器
-# 	'''
-# 	def __init__(self):
-# 		super().__init__()
-# 		self.__gr=XJ_GitRecord(self._vtree.Get_Tree())
-# 		self.__go=XJQ_GitOperator(self,self._vtree,self.__gr)
-# 		self._vtree.Get_Node(0).setText('选择路径')
-# 		# self._vtree.Get_Tree().Set_NodeSize(-1,100,50)
-# 		self._vtree.Get_Tree().Set_NodeSize(0,400,50)
-# 		self._vtree.Get_ClickedSignal().connect(lambda index:self.Set_Path() if index==0 else print("AAA"))
-# 		self.Opt_Update()
-# 	# def _
-# 	def Get_DifferentWith(self,targetID:int,sourceID:int=None):
-# 		cmd='git status -s'
-# 	def Opt_CreateBackup(self,info:str):
-# 		return False
-# 		return self.__go.Opt_AddCommit(info)
-# 	def Set_Path(self,path:str=None):
-# 		'''
-# 			设置路径。
-# 			如果path为None则打开对话框进行选择
-# 		'''
-# 		return self.__go.Opt_SetPath(path)
-# 	def Opt_Recover(self,id:int):
-# 		if(0<=id<len(self.__gr.commitID)):
-# 			return self.__go.Opt_Checkout(self.__gr.commitID[id])
-# 		return False
-# 	def Opt_Update(self):
-# 		super().Opt_Update()
-# 		self.__go.Opt_Update()
 
 
 

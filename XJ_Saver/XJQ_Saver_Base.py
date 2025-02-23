@@ -96,7 +96,7 @@ class XJQ_Saver_Base(QWidget):
 		'''
 		vtree=self._vtree
 		mskOption=self.__mskOption
-		btns=[btn for btn in self._optionBtns if btn.isVisible()]
+		btns=[btn for btn in self._optionBtns if not btn.isHidden()]
 		size=self._optionBtnSize
 		interval=self._optionBtnInterval
 		if(id>0 and vtree.Get_Tree().Get_IndexIsExist(id)):
