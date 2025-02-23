@@ -79,7 +79,7 @@ class XJ_GitRecord:
 					tree[p].append(len(tree))
 					coincident[len(tree)]=merge
 					tree.append([-1])
-					commitID.append("")#插入空数据
+					commitID.append(commitID[merge])#插入相应数据
 		return True
 	def Opt_AddCommit(self):
 		'''
