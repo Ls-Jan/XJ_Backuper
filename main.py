@@ -1,35 +1,40 @@
 
 
-from XJ_Saver.XJQ_Saver_Git import XJQ_Saver_Git
-from XJ_Saver.XJ_Git import XJ_Git
-from XJ_Saver.XJ_GitRecord import XJ_GitRecord
+from XJ_Saver.XJQ_Saver_Git.XJQ_Saver_Git import XJQ_Saver_Git
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 
 
 
-# if True:
-# 	app=QApplication([])
 
-# 	wid=QWidget()
-# 	box=QHBoxLayout(wid)
-# 	smp=QSignalMapper()
-# 	for i in range(3):
-# 		btn=QPushButton(str(i))
-# 		btn.resize(100,100)
-# 		btn.setSizePolicy(QSizePolicy(QSizePolicy.Policy.Expanding,QSizePolicy.Policy.Expanding))
-# 		box.addWidget(btn)
-# 		btn.clicked.connect(smp.map)
-# 		smp.setMapping(btn,btn)
-# 	btn.clicked.disconnect(smp.map)
-# 	smp.mappedWidget.connect(lambda btn:print("4>",btn.text()))
+if False:
+	app=QApplication([])
 
-# 	wid.show()
-# 	wid.resize(600,200)
-# 	app.exec()
-# 	exit()
+	dlg=QDialog()
+	dlg.setWindowTitle('选择分支')
+	view=QListWidget()
+	btnNew=QPushButton("创建新分支")
+	btnApply=QPushButton("确认")
+	vbox=QVBoxLayout(dlg)
+	hbox=QHBoxLayout()
+	vbox.addWidget(view)
+	vbox.addStretch(1)
+	vbox.addLayout(hbox)
+	hbox.addWidget(btnNew)
+	hbox.addWidget(btnApply)
 
+	for i in ['<游离>',(str(i) for i in range(5))]:
+		view.insertItem(len(view),str(i))
+	view.setCurrentIndex(view.model().index(0,0))
+	view.pressed.connect(lambda:print([i.row() for i in view.selectedIndexes()]))
+	view.show()
+
+	dlg.resize(300,200)
+	# group.setSizePolicy(QSizePolicy.Policy.Expanding,QSizePolicy.Policy.Expanding)
+	dlg.exec()
+	# app.exec()
+	exit()
 
 
 

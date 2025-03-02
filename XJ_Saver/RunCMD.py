@@ -1,4 +1,8 @@
 
+__version__='0.0.0'
+__author__='Ls_Jan'
+__all__=['RunCMD']
+
 import subprocess
 from typing import List
 import pathlib

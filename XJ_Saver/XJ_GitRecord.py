@@ -1,7 +1,10 @@
 
+__version__='0.0.0'
+__author__='Ls_Jan'
+__all__=['XJ_GitRecord']
+
 from .XJ_Git import XJ_Git
 from typing import List,Dict
-
 
 class XJ_GitRecord:
 	'''
@@ -20,14 +23,14 @@ class XJ_GitRecord:
 		self.branchCommits:Dict[str,List[int]]={}#分支名到节点索引列表
 		self.merges:Dict[str,List[int]]={}#合并的commit对应的节点索引以及相应的父节点索引列表
 		self.coincident:Dict[int,int]={}#逻辑节点索引到实际节点索引(将环打断成树)
-		self.isDetached:bool=False#HEAD是否脱离(不指向分支)
 		self.headIndex:int=0#HEAD对应的节点索引
+		self.headBranch:str=''#HEAD对应的分支(为空则说明脱离)
 	def Opt_LoadFromLocal(self,path:str):
 		'''
 			加载git信息。
 			如果路径无效则返回False并且不做任何动作。
 		'''
-		if(not XJ_Git.Test_RepositoryExist(path).flag):
+		if(not XJ_Git.Test_RepositoryExist(path).valid):
 			return False
 		self.path=path
 		tree=self.tree
@@ -50,13 +53,13 @@ class XJ_GitRecord:
 			for i in range(1 if self.functonalRoot else 0,len(commitID)):
 				commitIndex[commitID[i]]=i
 				tree.append([-1])
-		if True:#更新self.isDetached、branchCommits、self.headIndex、merges
+		if True:#更新self.headBranch、branchCommits、self.headIndex、merges
 			rst=XJ_Git.Get_BranchNames(path=path)
-			self.isDetached=rst.headIsDetached
+			self.headBranch=rst.headName if rst.headIsDetached else ''
 			branchCommits.clear()
 			for name in rst.nameLst:
 				branchCommits[name]=[commitIndex[c] for c in XJ_Git.Get_BranchCommits(name,path=path).commits]
-			self.headIndex=commitIndex[rst.headName] if self.isDetached else branchCommits[rst.headName][0]
+			self.headIndex=commitIndex[rst.headName] if rst.headIsDetached else branchCommits[rst.headName][0]
 			merges.clear()
 			for merge in XJ_Git.Get_Merges(path=path).mergeLst:
 				merges[commitIndex[merge.id]]=[commitIndex[p] for p in merge.parents]
@@ -125,7 +128,7 @@ class XJ_GitRecord:
 		'''
 		rst=XJ_Git.Get_BranchNames(self.path)
 		self.headIndex=self.commitIndex[rst.headName] if rst.headIsDetached else self.branchIndex[rst.headName]
-		self.isDetached=rst.headIsDetached
+		self.headBranch=rst.headName if rst.headIsDetached else ''
 		return True
 	
 
