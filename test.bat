@@ -7,6 +7,60 @@ git log --oneline --all --graph
 @REM git stash list
 echo.
 
+@REM git add .
+@REM git commit -m XXX
+@REM git diff a3295e3 --name-status
+@REM git diff --name-only -z
+
+@REM git add .
+@REM git commit -m X
+@REM git checkout -f master
+@REM git diff 6b6a0ca 98b3de2 
+
+@REM git status -h
+@REM git rev-parse A
+
+@REM git add .
+@REM git reset HEAD
+@REM git diff -h
+@REM git diff --name-status
+@REM git diff eaf884a 5353ecc --name-status
+@REM git diff eeas --name-status
+
+@REM git diff 0d2c5d0 --name-status
+@REM git diff --name-status
+@REM git diff 1b28939 482b782 --name-status
+@REM git diff 1b28939 e313056 --name-status
+@REM git diff 0d2c5d0 e313056 --name-status
+@REM git diff 0d2c5d0 6b6a0ca --name-status
+@REM git diff 6b6a0ca 98b3de2 --name-status
+@REM git diff 482b782 98b3de2 --name-status
+@REM git diff 815c1b9 HEAD --stat --name-only
+@REM git diff HEAD 815c1b9 --stat 
+
+@REM git add .
+@REM git checkout -f HEAD
+@REM git reset HEAD~1
+@REM git clean -xdf
+@REM git status -s -h
+@REM git log HEAD
+@REM git rev-parse -h
+
+@REM git log --children --oneline HEAD --format="%%h"
+@REM echo.
+@REM git log --children --oneline --all --
+@REM git rev-list --children --no-expand-tabs --all --
+@REM git rev-list --children --abbrev-commit --all --
+@REM git log --children --pretty=reference --all --
+@REM git log --children --oneline --all --
+@REM git log --children --oneline --format="%%h %%p" --all --
+@REM git log --children --oneline --all --format="%%h %%p" 
+@REM git log --children --oneline 
+@REM git rev-list --children --all
+@REM git branch 
+
+@REM git branch --show-current
+
 @REM git log HEAD --oneline -n 1
 @REM git rev-parse --short HEAD
 @REM git stash clear
@@ -25,11 +79,11 @@ echo.
 @REM git diff --stat
 
 
-git checkout -f master
-type nul>D
-git add .
+@REM git checkout -f master
+@REM type nul>D
+@REM git add .
 @REM git checkout -f C
-git restore --source C .
+@REM git restore --source C .
 
 
 @REM git clean -xdf

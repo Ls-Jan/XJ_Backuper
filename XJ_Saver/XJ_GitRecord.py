@@ -20,7 +20,6 @@ class XJ_GitRecord:
 		self.commitID:List[str]=[]#节点索引到commitID(从旧到新排列)
 		self.commitIndex:Dict[str,int]={}#commitID到节点索引
 		self.branchIndex:Dict[str,int]={}#分支对应的节点索引
-		self.branchCommits:Dict[str,List[int]]={}#分支名到节点索引列表
 		self.merges:Dict[str,List[int]]={}#合并的commit对应的节点索引以及相应的父节点索引列表
 		self.coincident:Dict[int,int]={}#逻辑节点索引到实际节点索引(将环打断成树)
 		self.headIndex:int=0#HEAD对应的节点索引
@@ -30,16 +29,14 @@ class XJ_GitRecord:
 			加载git信息。
 			如果路径无效则返回False并且不做任何动作。
 		'''
-		if(not XJ_Git.Test_RepositoryExist(path).valid):
+		if(not XJ_Git.Test_CommitExist(path=path).valid):
 			return False
 		self.path=path
 		tree=self.tree
 		commitID=self.commitID
-		branchCommits=self.branchCommits
 		commitIndex=self.commitIndex
 		merges=self.merges
 		coincident=self.coincident
-		branchIndex=self.branchIndex
 		if True:#更新commitID、commitIndex、tree
 			commitIndex.clear()
 			commitID.clear()
@@ -47,38 +44,47 @@ class XJ_GitRecord:
 				del tree[1:]
 				del tree[0][1:]
 				commitID.append("")#插入空数据
+				tree[0].append(1)
 			else:#不保留根节点
 				tree.clear()
 			commitID.extend(reversed(XJ_Git.Get_RecentCommits(-1,path).commits))
 			for i in range(1 if self.functonalRoot else 0,len(commitID)):
 				commitIndex[commitID[i]]=i
 				tree.append([-1])
-		if True:#更新self.headBranch、branchCommits、self.headIndex、merges
-			rst=XJ_Git.Get_BranchNames(path=path)
-			self.headBranch=rst.headName if rst.headIsDetached else ''
-			branchCommits.clear()
-			for name in rst.nameLst:
-				branchCommits[name]=[commitIndex[c] for c in XJ_Git.Get_BranchCommits(name,path=path).commits]
-			self.headIndex=commitIndex[rst.headName] if rst.headIsDetached else branchCommits[rst.headName][0]
+		if True:#更新self.headBranch、self.branchIndex、self.headIndex、merges
+			rst=XJ_Git.Get_BranchCommits(path=path)
+			self.headBranch=rst.headBranch
+			self.branchIndex.clear()
+			for branch,commit in rst.branchCommit.items():
+				self.branchIndex[branch]=commitIndex[commit]
+			self.headIndex=self.branchIndex.pop('HEAD')
 			merges.clear()
 			for merge in XJ_Git.Get_Merges(path=path).mergeLst:
 				merges[commitIndex[merge.id]]=[commitIndex[p] for p in merge.parents]
-		if True:#更新tree、branchIndex
-			for branch in branchCommits:
-				n:list=tree[0]
-				for id in reversed(branchCommits[branch]):#由旧到新
-					if(id not in n[1:]):
-						n.append(id)
-					n=tree[id]
-			branchIndex.clear()
-			for id in branchCommits:
-				branchIndex[id]=branchCommits[id][0]
-			for node in tree:
-				node[1:]=sorted(node[1:])
+		if True:#更新tree
+			# for i in range(len(tree)):
+			# 	print(i,tree[i])
+			# print()
+			rst=XJ_Git.Get_CommitChildren(path)
+			stk=[rst.rootCommit]
+			children=rst.children
+			while(stk):
+				curr=stk.pop()
+				print(commitIndex[curr],[commitIndex[key] for key in children[curr]])
+				n:list=tree[commitIndex[curr]]
+				for key in children[curr]:
+					i=commitIndex[key]
+					if(i not in n[1:]):
+						n.append(i)
+				stk.extend(reversed(children[curr]))
+			print()
+			# for node in tree:
+				# node[1:]=sorted(node[1:])
 		if True:#更新coincident、tree、commitID
 			coincident.clear()
 			for merge,parents in merges.items():#更新tr，处理成环点
 				for p in parents[1:]:#新增节点
+					tree[p].remove(merge)
 					tree[p].append(len(tree))
 					coincident[len(tree)]=merge
 					tree.append([-1])
@@ -94,7 +100,10 @@ class XJ_GitRecord:
 			self.tree[self.headIndex].append(index)
 			self.tree.append([self.headIndex])
 			self.commitIndex[commitID]=index
+			self.commitID.append(commitID)
 			self.headIndex=index
+			if(self.headBranch):
+				self.branchIndex[self.headBranch]=index
 		return True
 	def Opt_Merge(self):
 		'''
@@ -117,18 +126,19 @@ class XJ_GitRecord:
 		'''
 			同步新增分支动作
 		'''	
-		for name in XJ_Git.Get_BranchNames(self.path).nameLst:
-			if(name not in self.branchCommits):
-				self.branchCommits[name]=[self.commitIndex[c] for c in XJ_Git.Get_BranchCommits(name,path=self.path).commits]
-				self.branchIndex[name]=self.branchCommits[name][0]
+		branchCommit=XJ_Git.Get_BranchCommits(self.path).branchCommit
+		for branch in branchCommit:
+			if(branch not in self.branchIndex):
+				self.branchIndex[branch]=self.commitIndex[branchCommit[branch]]
 		return True
 	def Opt_Checkout(self):
 		'''
 			同步恢复操作（切换HEAD)
 		'''
-		rst=XJ_Git.Get_BranchNames(self.path)
-		self.headIndex=self.commitIndex[rst.headName] if rst.headIsDetached else self.branchIndex[rst.headName]
-		self.headBranch=rst.headName if rst.headIsDetached else ''
+		rst=XJ_Git.Get_BranchCommits(self.path)
+		branchCommit=rst.branchCommit
+		self.headIndex=self.commitIndex[branchCommit['HEAD']]
+		self.headBranch=rst.headBranch
 		return True
 	
 

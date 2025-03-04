@@ -34,6 +34,7 @@ class XJQ_Saver_Base(QWidget):
 	_btnRecover:PushButton
 	__clickIndex:int#记录弹出菜单的节点
 	__mskOption:XJQ_Mask#遮罩，弹出菜单时只显示菜单和相应节点
+	__mskBusy:XJQ_Mask#遮罩，提示操作正忙
 	def __init__(self,vtree:XJQ_VisibleTree=None):
 		super().__init__()
 		if(not vtree):
@@ -42,7 +43,7 @@ class XJQ_Saver_Base(QWidget):
 		mskOption=XJQ_Mask(canvas,QColor(0,0,0,128))
 		mskBusy=XJQ_Mask(self,QColor(0,0,0,128))
 		btnBackup=PushButton("创建备份",canvas)
-		btnRecover=PushButton("恢复",canvas)
+		btnRecover=PushButton("恢复备份",canvas)
 
 		vbox=QVBoxLayout(self)
 		vbox.addWidget(vtree.Get_Canvas())
@@ -77,11 +78,11 @@ class XJQ_Saver_Base(QWidget):
 			当path=None时弹出弹窗进行路径选择。
 		'''
 		return True
-	def Get_DifferentWith(self,targetID:int,sourceID:int=None):
+	def Get_ChangedFiles(self,targetID:int,sourceID:int=None):
 		'''
 			source与target进行比较，获取文件变化信息。
 			如果source为空则默认当前节点位置；
-			如果target为空则与目标路径进行比较；
+			如果target为空则与工作区(备份目标)进行比较；
 		'''
 		pass
 	def Opt_CreateBackup(self,info:str):
@@ -108,6 +109,7 @@ class XJQ_Saver_Base(QWidget):
 		'''
 		visible=self.__mskBusy.isVisible()
 		self.__mskBusy.setVisible(flag)
+		self.__mskBusy.raise_()
 		return visible!=flag
 	def UI_ShowNodeOption(self,id:int,show:bool=True):
 		'''

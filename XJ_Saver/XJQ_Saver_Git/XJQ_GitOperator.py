@@ -8,7 +8,7 @@ from ..XJ_GitRecord import XJ_GitRecord
 from XJ.Widgets.XJQ_TextInputDialog import XJQ_TextInputDialog
 from XJ.Widgets.XJQ_StringSelector import XJQ_StringSelector
 
-from PyQt5.QtWidgets import QWidget,QMessageBox,QFileDialog,QCheckBox,QGridLayout,QSpacerItem,QSizePolicy
+from PyQt5.QtWidgets import QMessageBox,QFileDialog,QCheckBox,QGridLayout,QSpacerItem,QSizePolicy
 from PyQt5.QtCore import QEventLoop
 from typing import Callable
 from threading import Thread
@@ -47,6 +47,10 @@ class XJQ_GitOperator:
 		grid.addItem(QSpacerItem(20,0,QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Preferred),1,0)
 		grid.addWidget(self.__cb_recoverStrict,1,1)
 		grid.addWidget(self.__cb_recoverMoveHead,2,1)
+		cb=self.__cb_recoverMoveHead
+		cb.setChecked(True)
+		cb=self.__cb_recoverStrict
+		cb.setChecked(True)
 		dlg=self.dlg_recover
 		dlg.layout().addLayout(grid,0,1)
 		# box.layout().addLayout(grid,1,1)
@@ -155,8 +159,14 @@ class XJQ_GitOperator:
 				dlg.Set_Hint('输入提交信息')
 				info=dlg.exec()
 			if(info):
-				self.dlg_fail.setText('提交失败')
-				return self.__exec(lambda:self.gr.Opt_AddCommit() if XJ_Git.Opt_AddCommit(info,self.gr.path).success else None)
+				rst=XJ_Git.Get_ChangedFiles(path=self.gr.path)
+				if(not rst.changed):
+					self.dlg_fail.setText('目标路径未发生变化，不需要进行备份')
+					self.dlg_fail.exec()
+					self.success=False
+				else:
+					self.dlg_fail.setText('提交失败')
+					return self.__exec(lambda:self.gr.Opt_AddCommit() if XJ_Git.Opt_AddCommit(info,self.gr.path).success else None)
 		return False
 	def Git_AddBranch(self,branch:str):
 		'''
@@ -179,18 +189,25 @@ class XJQ_GitOperator:
 	def Git_SwitchBranch(self,branch:str):
 		'''
 			切换分支，
-			只允许同个<commit>内的分支切换。
+			只允许同个commit内的分支切换。
 			如果branch=None则弹出分支选择框
 		'''
 		if(not self.busy(True)):
 			if(branch==None):
 				dlg:XJQ_StringSelector=self.dlg_branchSelect
 				dlg.Set_DisableList(self.gr.branchIndex.keys())
-				dlg.Set_SelectableList(['<游离>']+[key for key,index in self.gr.branchIndex.items() if index==self.gr.headIndex])
-				if(not dlg.Set_SelectedString(self.gr.headBranch)):
-					dlg.Set_SelectedRow(0)
+				lst=[self.gr.commitID[self.gr.headIndex]]+[key for key,index in self.gr.branchIndex.items() if index==self.gr.headIndex]
+				i=0
+				if(self.gr.headBranch!=''):
+					if(self.gr.headBranch in lst):
+						i=lst.index(self.gr.headBranch)
+				lst[i]=f'*{lst[i]}'
+				dlg.Set_SelectableList(lst)
+				dlg.Set_SelectedRow(i)
 				branch=dlg.exec()
 			if(branch):
+				if(branch[0]=='*'):
+					return True
 				self.dlg_fail.setText('分支切换失败')
 				return self.__exec(lambda:self.gr.Opt_Checkout() if XJ_Git.Opt_ChangeBranch(branch,self.gr.path).success else None)
 		return False

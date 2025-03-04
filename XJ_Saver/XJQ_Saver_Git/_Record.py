@@ -28,5 +28,6 @@ class _Record:
 		if(self.op.success):
 			self.__saver.Opt_Update()
 		self.__saver.Set_Busy(not self.__mskSwitch)
+		self.__saver.UI_ShowNodeOption(0,False)
 
 
