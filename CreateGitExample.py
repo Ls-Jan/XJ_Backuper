@@ -36,8 +36,8 @@ if True:
 	WriteFile('init','init',repo)#生成一个文件，否则无法提交
 	rst=RunCMD(f'git add . && git commit -m init',repo)
 
-	lst=['master','A']
-	# lst=['master','A','B','C']
+	# lst=['master','A']
+	lst=['master','A','B','C']
 	for n in lst:
 		rst=RunCMD('git checkout HEAD~3',repo)
 		rst=RunCMD(f'git switch -c {n}',repo)

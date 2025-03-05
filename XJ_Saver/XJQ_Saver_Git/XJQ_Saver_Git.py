@@ -48,7 +48,11 @@ class XJQ_Saver_Git(XJQ_Saver_Base):
 		return self.__rec.op.Set_RecoverMode(strict,moveHead)
 	def Set_Path(self,path):
 		with self.__rec:
+			if(path==None):
+				if(not self.__dlg_pathChange.exec()):
+					return False
 			flag=self.__rec.op.Git_LoadPath(path)
+			self.Opt_Update()
 			self._vtree.Opt_Focus()
 			return flag
 	def Get_ChangedFiles(self,targetID:int,sourceID:int=None):

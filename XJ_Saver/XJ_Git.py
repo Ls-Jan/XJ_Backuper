@@ -175,7 +175,7 @@ class XJ_Git:
 			self.delete=record['D']
 	class Test_CommitExist:
 		'''
-			判断路径下的仓库是否存在
+			判断路径下的提交是否存在
 		'''
 		info:str
 		valid:bool
@@ -187,9 +187,9 @@ class XJ_Git:
 			if(commitID==None):
 				commitID='HEAD'
 			cmd=f'git rev-parse --short {commitID}'
-			rst=RunCMD(cmd,path)[0]
-			self.valid=rst.find('fatal:')!=0
-			self.info='' if self.valid else rst
+			rst=RunCMD(cmd,path)
+			self.valid=rst[0].find('fatal:')!=0 if rst else False
+			self.info=rst[0] if self.valid else ''
 	class Opt_InitRepository:
 		'''
 			指定路径下创建仓库。
