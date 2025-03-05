@@ -13,7 +13,7 @@ class XJ_Git:
 			- checkout【仅影响HEAD】：将HEAD指向指定的<commit>；
 			- reset【影响HEAD以及所指分支】：将HEAD分支的位置搬到其他地方(非常简单暴力)，不一定只是回溯/回滚；
 			- switch【仅影响HEAD】：将HEAD指向指定分支，是checkout的特化；
-			- restore【不影响HEAD】：恢复文件，但不像checkout一样移动HEAD；
+			- restore【不影响HEAD】：恢复文件，但不像checkout一样移动HEAD，使用--staged将撤回git add的行为(即重置“暂存区”)；
 			- clean【不影响HEAD】：将工作区中未跟踪的文件全部清除(非常暴力)；
 			- add【不影响HEAD】：记录工作区中的改动，它不仅作用于commit命令，也作用于stash命令；
 			- commit【影响HEAD以及所指分支】：将改动记录进行提交；
@@ -263,7 +263,8 @@ class XJ_Git:
 			改变HEAD指向的分支。
 			不会改变工作区文件。
 			亦可传入commit哈希进行切换。
-			采用git stash、git checkout、git restore组合拳实现该功能
+			采用git stash、git checkout、git restore组合拳实现该功能。
+			虽然git reset --soft一样可以只移动HEAD但它只能移至提交而没法指向分支。
 		'''
 		info:str
 		success:bool

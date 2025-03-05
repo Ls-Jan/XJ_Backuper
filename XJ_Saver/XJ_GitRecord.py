@@ -62,22 +62,17 @@ class XJ_GitRecord:
 			for merge in XJ_Git.Get_Merges(path=path).mergeLst:
 				merges[commitIndex[merge.id]]=[commitIndex[p] for p in merge.parents]
 		if True:#更新tree
-			# for i in range(len(tree)):
-			# 	print(i,tree[i])
-			# print()
 			rst=XJ_Git.Get_CommitChildren(path)
 			stk=[rst.rootCommit]
 			children=rst.children
 			while(stk):
 				curr=stk.pop()
-				print(commitIndex[curr],[commitIndex[key] for key in children[curr]])
 				n:list=tree[commitIndex[curr]]
 				for key in children[curr]:
 					i=commitIndex[key]
 					if(i not in n[1:]):
 						n.append(i)
 				stk.extend(reversed(children[curr]))
-			print()
 			# for node in tree:
 				# node[1:]=sorted(node[1:])
 		if True:#更新coincident、tree、commitID

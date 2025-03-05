@@ -79,6 +79,7 @@ class XJQ_Saver_Git(XJQ_Saver_Base):
 		for i in range(1,len(vtree.Get_Tree())):#给节点进行编号
 			btn=vtree.Get_Node(i)
 			btn.setText(f'{i}')
+			btn.setDisabled(False)
 		for merge in gr.merges:#设置合并点
 			btn=vtree.Get_Node(merge)
 		for lid,rid in gr.coincident.items():#设置逻辑点
